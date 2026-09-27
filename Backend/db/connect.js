@@ -1,13 +1,15 @@
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const mongoose = require('mongoose');
 
-const connectionString = `mongodb+srv://TahmidulOmi:HackCSB01@dmscluster.m2afbo1.mongodb.net/DMSDatabase?retryWrites=true&w=majority&appName=DMSCluster`
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log('✅ Connected to SurakshaCluster database successfully!');
+  } catch (err) {
+    console.error('❌ Database connection failed:', err.message);
+    process.exit(1);
+  }
+};
 
-mongoose
-    .connect(connectionString, {
-    })
-    .then(() => {
-        console.log('Connected to the database!');
-    })
-    .catch(() => {
-        console.log('Connection failed!');
-    });
+module.exports = connectDB;
