@@ -5,12 +5,14 @@ import Logo from '../assets/images/dms-logo-black.png';
 import notification_icon_on from '../assets/images/notification_on.png';
 import notification_icon from '../assets/images/notification.png';
 import { useSearchParams, useLocation } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 
 import { Link } from 'react-router-dom';
+import { remove } from '../store/roleSlice';
 export const Header= () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const loggedIn = useSelector(state => state.roleState.loggedIn);
   const isAdmin = useSelector(state => state.roleState.isAdmin);
   const [notIcon, setNotIcon] = useState(notification_icon_on);
@@ -19,27 +21,24 @@ export const Header= () => {
   console.log(location.pathname.split("/"));
   const navBars= ['.nav-incidents','.nav-communities','.nav-announcements','.nav-medicals','.nav-donate' ];
 
-  const SetActive= (command)=>{
-      navBars.forEach((bars)=>{
-        if (bars===command){
-          document.querySelector(command).classList.add('nav-active');
-        }
-        else{
-          document.querySelector(bars).classList.remove('nav-active');
-        }
-      })
+  const SetActive = (command) => {
+    navBars.forEach((selector) => {
+      const el = document.querySelector(selector);
+      if (el) el.classList.toggle('nav-active', selector === command);
+    });
   }
 
   useEffect(()=>{
     if (navBars.includes(".nav-"+ location.pathname.split("/")[1])) SetActive(".nav-"+ location.pathname.split("/")[1]);
     else{
       navBars.forEach((bars)=>{
-        document.querySelector(bars).classList.remove('nav-active');
+        const el = document.querySelector(bars);
+        if (el) el.classList.remove('nav-active');
       })
     }
   }
 
-      ,[location.pathname.split("/")])
+      ,[location.pathname])
   
   const clickNotification=()=>{
     if(notIcon === notification_icon_on){
@@ -75,6 +74,7 @@ export const Header= () => {
 
                 <li className='nav-medicals' >
                   <Link to='/medicals'>Medicals</Link></li>
+                {loggedIn && <li><Link to='/operations'>Operations</Link></li>}
 
                 <li className='nav-donate' >
                   <Link to='/donate'>Donate</Link></li>
@@ -87,20 +87,8 @@ export const Header= () => {
                   >Login/Register</button></li>
                 
                 }
-                {
-                  isAdmin && loggedIn &&
-                  <li className='nav-admin' >
-                  <Link to='/admin'>Admin</Link></li>
-                }
-                {
-                  !isAdmin && loggedIn &&
-                  <li className='nav-login' >
-                  <button type="button" className="header-login" 
-                  onClick={()=> {
-                    navigate('/auth');
-                  }}
-                  >LogOut</button></li>                  
-                }
+                {isAdmin && loggedIn && <li className='nav-admin'><Link to='/admin'>Admin</Link></li>}
+                {loggedIn && <li className='nav-login'><button type="button" className="header-login" onClick={()=> { dispatch(remove()); navigate('/auth'); }}>LogOut</button></li>}
                 
 
             </ul>

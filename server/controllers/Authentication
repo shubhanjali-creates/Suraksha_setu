@@ -2,108 +2,84 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
-const secretKey = process.env.JWT_SECRET;
+const createToken = (user) => {
+  const secretKey = process.env.JWT_SECRET;
+  if (!secretKey) throw new Error('JWT_SECRET is not configured on the server.');
+  return jwt.sign(
+    { UserID: user.UserID, Email: user.Email },
+    secretKey,
+    { expiresIn: '1h' }
+  );
+};
 
 const register = async (req, res) => {
-    const {
-        Name,
-        Email,
-        Phone,
-        Password,
-        Address,
-        UserType,
-        Available,
-        Community,
-        CreationTime
-    } = req.body;
+  const {
+    Name, Email, Phone, Password, Address, UserType,
+    Available = true, Community = [], CreationTime
+  } = req.body;
 
-    try {
-        const count = await User.countDocuments();
-        const UserID = count + 1;
+  if (!Name || !Email || !Phone || !Password || !Address) {
+    return res.status(400).json({ error: 'Name, email, phone, password and address are required.' });
+  }
+  if (!/^\d{10}$/.test(String(Phone))) {
+    return res.status(400).json({ error: 'Phone number must contain exactly 10 digits.' });
+  }
 
-        console.log(UserID);
+  try {
+    const normalizedEmail = String(Email).trim().toLowerCase();
+    const existing = await User.findOne({ Email: normalizedEmail });
+    if (existing) return res.status(409).json({ error: 'An account with this email already exists.' });
 
-        const hashedPassword = await bcrypt.hash(Password, 10);
+    // UserID is a legacy application field, so allocate it from the current maximum.
+    const lastUser = await User.findOne().sort({ UserID: -1 }).select('UserID').lean();
+    const UserID = lastUser ? lastUser.UserID + 1 : 1;
+    const hashedPassword = await bcrypt.hash(Password, 10);
 
-        const user = await User.create({
-            UserID,
-            Name,
-            Email,
-            Phone,
-            Password: hashedPassword,
-            Address,
-            UserType,
-            Available,
-            Community,
-            CreationTime
-        });
+    const user = await User.create({
+      UserID,
+      Name: String(Name).trim(),
+      Email: normalizedEmail,
+      Phone: String(Phone),
+      Password: hashedPassword,
+      Address: String(Address).trim(),
+      UserType: Array.isArray(UserType) && UserType.length ? UserType : ['affected'],
+      Available: Boolean(Available),
+      Community: Array.isArray(Community) ? Community : [],
+      CreationTime: CreationTime || new Date(),
+    });
 
-        const payload = {
-            UserID: user.UserID,
-            Email: user.Email
-        };
+    const safeUser = user.toObject();
+    delete safeUser.Password;
 
-        const token = jwt.sign(payload, secretKey, {
-            expiresIn: '1h'
-        });
-
-        res.status(201).json({
-            user,
-            token
-        });
-
-    } catch (error) {
-        res.status(500).json({
-            error: error.message
-        });
-    }
+    res.status(201).json({ user: safeUser, token: createToken(user) });
+  } catch (error) {
+    if (error.code === 11000) return res.status(409).json({ error: 'An account with this email already exists.' });
+    res.status(500).json({ error: error.message });
+  }
 };
 
 const login = async (req, res) => {
-    const { Email, Password } = req.body;
+  const { Email, Password } = req.body;
+  if (!Email || !Password) return res.status(400).json({ error: 'Email and password are required.' });
 
-    try {
-        const user = await User.findOne({ Email });
-
-        if (!user) {
-            return res.status(401).json({
-                error: 'Invalid credentials'
-            });
-        }
-
-        const passwordMatch = await bcrypt.compare(
-            Password,
-            user.Password
-        );
-
-        if (passwordMatch) {
-            const payload = {
-                UserID: user.UserID,
-                Address: user.Address
-            };
-
-            const token = jwt.sign(payload, secretKey, {
-                expiresIn: '1h'
-            });
-
-            res.status(200).json({
-                user,
-                token
-            });
-        } else {
-            res.status(401).json({
-                error: 'Invalid credentials'
-            });
-        }
-
-    } catch (error) {
-        res.status(500).json({
-            error: error.message
-        });
+  try {
+    const user = await User.findOne({ Email: String(Email).trim().toLowerCase() });
+    if (!user || !(await bcrypt.compare(Password, user.Password))) {
+      return res.status(401).json({ error: 'Invalid credentials.' });
     }
+
+    const safeUser = user.toObject();
+    delete safeUser.Password;
+    res.status(200).json({ user: safeUser, token: createToken(user) });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
 
-module.exports = {
-    register,
-    login
+const me = async (req, res) => {
+  const user = await User.findOne({ UserID: req.user.UserID }).select('-Password');
+  if (!user) return res.status(404).json({ error: 'User not found.' });
+  res.json({ user });
 };
+
+module.exports = { register, login, me };

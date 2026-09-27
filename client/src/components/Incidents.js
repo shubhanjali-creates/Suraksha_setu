@@ -6,13 +6,8 @@ import locicon from '../assets/images/location.png';
 
 import { Map } from '../components';
 
-import { useDispatch } from "react-redux";
-
-import { changeRole } from '../store/roleSlice';
 
 export const Incidents = () => {
-
-  const dispatch = useDispatch();
 
   const [AllLocations, setAllLocations] = useState(null);
   const [incidents, setIncidents] = useState(null);
@@ -75,8 +70,8 @@ export const Incidents = () => {
   const [myLocation, setMyLocation] = useState(null);
 
   // Raipur, Chhattisgarh
-  const [longitude, setLongitude] = useState(81.6296);
-  const [latitude, setLatitude] = useState(21.2514);
+  const [longitude, setLongitude] = useState(null);
+  const [latitude, setLatitude] = useState(null);
 
   // =========================
   // LOCATION BUTTON
@@ -101,11 +96,6 @@ export const Incidents = () => {
       setlocateOn(true);
     }
 
-    dispatch(changeRole({
-      isAdmin: true,
-      role: "admin",
-      loggedIn: true
-    }));
   };
 
   // =========================
@@ -228,12 +218,13 @@ export const Incidents = () => {
     try {
 
       const response = await fetch(
-        'http://localhost:5000/incident/create',
+        '/incident/create',
         {
           method: 'POST',
 
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            ...(localStorage.getItem('token') ? { Authorization: `Bearer ${localStorage.getItem('token')}` } : {})
           },
 
           body: JSON.stringify(incident)
@@ -275,7 +266,7 @@ export const Incidents = () => {
 
   useEffect(() => {
 
-    fetch('http://localhost:5000/home')
+    fetch('/home')
 
       .then(res => res.json())
 
@@ -285,10 +276,9 @@ export const Incidents = () => {
 
         const Maplocations = data.MapLocation || [];
 
-        Maplocations.push({
-          position: [latitude, longitude],
-          popupText: "Your selected location"
-        });
+        if (Number.isFinite(Number(latitude)) && Number.isFinite(Number(longitude))) {
+          Maplocations.push({ position: [Number(latitude), Number(longitude)], popupText: "Selected location" });
+        }
 
         console.log(Maplocations);
 

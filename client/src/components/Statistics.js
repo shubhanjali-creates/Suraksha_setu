@@ -19,7 +19,7 @@ const Statistics = () => {
             </div>
             <div className="col-md-6 col-lg-3 mb-4 mb-md-0" id='TDon'>
               <div className="box bg-warning p-3">
-                <h3>BDT 5,154</h3>
+                <h3>₹5,15,400</h3>
                 <p className="lead">Total Donations</p>
               </div>
             </div>

@@ -27,7 +27,7 @@ async function getTotalDonationAmount() {
 const home = async(req, res) => {
     try {
         // Step 1: Find all running incidents
-        const runningIncidents = await Incident.find({ Status: "Running" });
+        const runningIncidents = await Incident.find({ Status: { $in: ["Reported","Verified","Responding","Running"] } });
     
         // Step 2: Extract all IncidentIDs from runningIncidents
         const incidentIDs = runningIncidents.map(incident => incident.IncidentID);
@@ -52,14 +52,14 @@ const home = async(req, res) => {
                 IncidentID: incident.IncidentID,
                 IncidentType: incident.IncidentType,
                 Description: incident.Description,
-                Location: location.Address,
+                Location: location ? location.Address : incident.IncidentLocation || 'India',
                 DateReported: JSON.stringify(incident.DateReported).split('T')[0],
                 Urgency: incident.Urgency,
                 Status: incident.Status,
-                Longitude: location.Longitude,
-                Latitude : location.Latitude,
+                Longitude: location ? location.Longitude : incident.Longitude,
+                Latitude : location ? location.Latitude : incident.Latitude,
             });
-            MapLocation.push({
+            if (location) MapLocation.push({
                 position: [location.Latitude, location.Longitude],
                 popupText: incident.IncidentType
             });

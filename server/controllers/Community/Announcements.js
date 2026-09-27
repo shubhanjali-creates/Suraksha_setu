@@ -1,10 +1,4 @@
-const getAnnouncements = async (req, res) => {
-    res.json({ message: 'Community Announcements', id: req.params.id });
-}
-
-const getCommunity = async (req, res) => {
-    res.json({ Community: 'Community Announcements', Chat: 'Community Chat', id: req.params.id });
-}
-
-
-module.exports = { getAnnouncements, getCommunity };
+const Community=require('../../models/Community'); const Announcement=require('../../models/Announcement'); const User=require('../../models/User'); const Location=require('../../models/Location');
+const getCommunity=async(req,res)=>{try{const CommunityID=Number(req.params.id);const community=await Community.findOne({ComID:CommunityID}).lean();if(!community)return res.status(404).json({error:'Community not found.'});const [leader,location]=await Promise.all([User.findOne({UserID:community.Leader}).select('-Password').lean(),Location.findOne({LocationID:community.LocationID}).lean()]);res.json({community,leader,location});}catch(e){res.status(500).json({error:e.message});}};
+const getAnnouncements=async(req,res)=>{try{const announcements=await Announcement.find({CommunityID:Number(req.params.id)}).sort({CreationDate:-1}).lean();res.json({announcements});}catch(e){res.status(500).json({error:e.message});}};
+module.exports={getAnnouncements,getCommunity};

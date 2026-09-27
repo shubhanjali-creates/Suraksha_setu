@@ -12,7 +12,7 @@ const Home = () => {
   const [ locations , setLocations] = useState(null);
   const [contacts, setContacts] = useState(null);
   useEffect(() => {
-    fetch('http://localhost:5000/home')
+    fetch('/home')
     .then(res => res.json())
     .then(data => {
       setIncidents(data);
@@ -26,8 +26,8 @@ const Home = () => {
 
   const [Itable, setItable] = useState('table');
   const [Etable, setEtable] = useState('table');
-  const [longitude, setLongitude] = useState(23.7264);
-  const [latitude, setLatitude] = useState(90.3925);
+  const [longitude, setLongitude] = useState(81.6296);
+  const [latitude, setLatitude] = useState(21.2514);
   
   const changeDisplay =(d)=> {
     if(d === 'table'){
@@ -42,7 +42,7 @@ const Home = () => {
         <h1 className='section-header'>Statistics </h1>
         <Statistics />
         
-        <h1 className='section-header'>HeatMap of Incidents</h1>
+        <h1 className='section-header'>Incident Map</h1>
         {
             incidents && incidents.incidentList &&
           <Map locations={locations} longitude={longitude} latitude={latitude} defaultZoom={7} />
@@ -64,7 +64,7 @@ const Home = () => {
           </tr>
           
           {incidents && incidents.incidentList && incidents.incidentList.map(incident => (
-            <tr>
+            <tr key={incident.IncidentID}>
               <td>{incident.IncidentID}</td>
               <td>{incident.IncidentType}</td>
               <td>{incident.DateReported}</td>
@@ -92,7 +92,7 @@ const Home = () => {
           </tr>
           {
             contacts && contacts.map(contact => (
-              <tr>
+              <tr key={contact.contactID}>
                 <td>{contact.contactID}</td>
                 <td>{contact.name}</td>
                 <td>{contact.designation}</td>

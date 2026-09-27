@@ -29,7 +29,7 @@ const Footer = () => {
                 </td>
                 <td>FAQ</td>
                 <td>
-                      <a href='mailto:arafatrahman219@gmail.com'>Mail us</a>
+                      <a href='mailto:surakshasetu@example.in'>Mail us</a>
                 </td>
 
             </tr>

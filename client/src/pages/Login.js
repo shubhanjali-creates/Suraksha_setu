@@ -1,6 +1,5 @@
 import "../assets/CSS/Login.css";
 import {useState} from "react";
-import DMS from "../api/DMS"
 import { useNavigate } from "react-router-dom";
 import { changeRole} from "../store/roleSlice";
 import { useDispatch } from "react-redux";
@@ -14,7 +13,7 @@ const Login=()=>{
     async function sendLogInfo(e){
        e.preventDefault();
        try{
-           const logInfo=await fetch("http://localhost:5000/auth/login",{
+           const logInfo=await fetch("/auth/login",{
                 method:"POST",
                 headers:{
                      "Content-Type":"application/json"
@@ -41,6 +40,8 @@ const Login=()=>{
                     dispatch(changeRole(role));
                     navigate("/");
 
+                } else {
+                    alert(data.error || "Login failed.");
                 }
                 
        }catch(error){
@@ -49,8 +50,8 @@ const Login=()=>{
     }
 
     return (
-        <div class="login">
-            <div class="loginTitle">login</div>
+        <div className="login">
+            <div className="loginTitle">login</div>
             <div><span>Email</span>
             <input 
                 id="loginEmail" 
@@ -66,7 +67,7 @@ const Login=()=>{
                 value={password}
                 onChange={(e)=>{setPassword(e.target.value);}}    
             /></div>
-            <div class="loginButton"><button onClick={sendLogInfo}>Log In</button></div>
+            <div className="loginButton"><button onClick={sendLogInfo}>Log In</button></div>
         </div>
     )
 }

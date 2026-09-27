@@ -14,8 +14,10 @@ const roleSlice= createSlice({
             console.log(action.payload);
             return { ...state, isAdmin: updatedAdmin, role: updatedRole, loggedIn: updatedLoggedIn};
         },
-        remove(){
-
+        remove(state){
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            return { ...state, isAdmin:false, role:"none", loggedIn:false };
         }
     }
 });

@@ -1,14 +1,11 @@
 import "../assets/CSS/Register.css";
 import { useState } from "react";
-import DMS from "../api/DMS";
-import { useNavigate } from "react-router-dom";
 
 const Register=()=>{
-    const navigate = useNavigate();
     const [name,setName]=useState("");
     const [email,setEmail]=useState("");
     const [phnNumber,setPhnNumber]=useState("");
-    const [thana,setThana]=useState("");
+    const [tehsil,setTehsil]=useState("");
     const [district,setDistrict]=useState("");
     const [pass, setPass]=useState("");
     const [address,setAddress]=useState("");
@@ -19,7 +16,7 @@ const Register=()=>{
                 Name:name,
                 Email:email,
                 Phone:phnNumber,
-                Address:address + ", " + thana + ", " + district,
+                Address:address + ", " + tehsil + ", " + district,
                 Password:pass,
                 UserType: ["affected"],
                 Available : true,
@@ -27,7 +24,7 @@ const Register=()=>{
                 CreationTime : new Date().toISOString()
             }
             console.log(regInfo);
-            const response = await fetch("http://localhost:5000/auth/register",{    
+            const response = await fetch("/auth/register",{    
                 method:"POST",
                 headers:{
                     "Content-Type":"application/json"
@@ -51,7 +48,7 @@ const Register=()=>{
     }
 
     return (
-        <div class="RegForm">
+        <div className="RegForm">
             <div className="RegTitle">Fill Up The Form</div>
             <div className="RegName">
                 <label>Name</label>
@@ -80,13 +77,13 @@ const Register=()=>{
                     onChange={(e)=>{setPhnNumber(e.target.value);}}
                 />
             </div>
-            <div className="RegThana">
-                <label>Thana</label>
+            <div className="RegTehsil">
+                <label>Tehsil / Taluk</label>
                 <input 
                     type="text" 
-                    placeholder="Enter your thana"
-                    value={thana}
-                    onChange={(e)=>{setThana(e.target.value);}}
+                    placeholder="Enter your tehsil / taluk"
+                    value={tehsil}
+                    onChange={(e)=>{setTehsil(e.target.value);}}
                 />
             </div>
             <div className="RegDistrict">
