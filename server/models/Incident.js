@@ -24,8 +24,17 @@ const incidentSchema = new mongoose.Schema({
     },
     IncidentType: {
         type: String,
-        enum: ['Fire', 'Flood', 'Cyclone', 'Earthquake', 'Others'],
-        required: true
+        enum: [
+            "Flood",
+            "Earthquake",
+            "Fire",
+            "Cyclone",
+            "Landslide",
+            "Drought",
+            "Heatwave",
+            "Accident",
+            "Others"
+        ]
     },
     Description: {
         type: String,
