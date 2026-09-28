@@ -1,8 +1,2 @@
-.map-container{
-    width: 500px;
-    height: 500px;
-    display: block;
-    margin: auto;
-    
-
-}
+.map-shell{height:100%;display:flex;flex-direction:column;background:#fff}.map-toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:12px 14px;background:#fff;border-bottom:1px solid var(--border)}.map-toolbar label{font-size:11px;font-weight:700;color:#344054}.map-toolbar select{margin-left:5px;padding:8px 10px;border:1px solid #d0d5dd;border-radius:9px;background:#fff;color:#344054;outline:none}.map-toolbar select:focus{border-color:#5b9db2;box-shadow:0 0 0 3px rgba(21,94,117,.1)}.map-toolbar span{font-size:11px;color:var(--muted);margin-left:auto}.map-container{width:100%;height:560px;min-height:520px;display:block}.map-marker{background:transparent;border:0}.map-marker span{display:block;width:18px;height:18px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 7px rgba(16,24,40,.35);background:#64748b}.map-marker-incident span{background:#dc2626}.map-marker-hospital span{background:#2563eb}.map-marker-shelter span{background:#16a34a}.map-marker-relief-centre span{background:#f59e0b}.leaflet-control-zoom a{color:#344054!important}.leaflet-popup-content-wrapper{border-radius:12px}.leaflet-popup-content{font-family:Inter,system-ui,sans-serif;font-size:12px;line-height:1.55}.leaflet-container{font-family:Inter,system-ui,sans-serif}
+@media(max-width:600px){.map-toolbar{padding:10px;gap:7px}.map-toolbar label{display:flex;align-items:center}.map-toolbar span{width:100%;margin-left:0}.map-container{min-height:420px;height:420px}}

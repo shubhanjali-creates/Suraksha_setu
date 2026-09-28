@@ -27,7 +27,7 @@ const Footer = () => {
                 <td>
                   <Link to="/incidents">Incidents</Link>
                 </td>
-                <td>FAQ</td>
+                <td><Link to="/faq">FAQ</Link></td>
                 <td>
                       <a href='mailto:surakshasetu@example.in'>Mail us</a>
                 </td>

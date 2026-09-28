@@ -22,6 +22,7 @@ const connectDB = require('./db/connect');
 connectDB();
 
 const io = new Server(server, { cors: { origin: allowedOrigin } });
+app.set('io', io);
 io.on('connection', (socket) => {
   socket.on('join-community', (communityId) => socket.join(`community:${communityId}`));
 });

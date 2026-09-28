@@ -24,6 +24,7 @@ const register = async (req, res) => {
   if (!/^\d{10}$/.test(String(Phone))) {
     return res.status(400).json({ error: 'Phone number must contain exactly 10 digits.' });
   }
+  if (String(Password).length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' });
 
   try {
     const normalizedEmail = String(Email).trim().toLowerCase();
@@ -42,7 +43,7 @@ const register = async (req, res) => {
       Phone: String(Phone),
       Password: hashedPassword,
       Address: String(Address).trim(),
-      UserType: Array.isArray(UserType) && UserType.length ? UserType : ['affected'],
+      UserType: ['affected'],
       Available: Boolean(Available),
       Community: Array.isArray(Community) ? Community : [],
       CreationTime: CreationTime || new Date(),
@@ -64,7 +65,7 @@ const login = async (req, res) => {
 
   try {
     const user = await User.findOne({ Email: String(Email).trim().toLowerCase() });
-    if (!user || !(await bcrypt.compare(Password, user.Password))) {
+    if (!user || user.Active === false || !(await bcrypt.compare(Password, user.Password))) {
       return res.status(401).json({ error: 'Invalid credentials.' });
     }
 

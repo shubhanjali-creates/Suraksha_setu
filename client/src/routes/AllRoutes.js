@@ -10,6 +10,8 @@ import {Auth} from '../pages/Auth';
 import { useEffect } from 'react';
 import OperationsDashboard from '../components/OperationsDashboard';
 import AdminDashboard from '../pages/AdminDashboard';
+import Guidelines from '../pages/Guidelines';
+import FAQ from '../pages/FAQ';
 
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -30,24 +32,21 @@ export const AllRoutes = () => {
         .catch(()=>{localStorage.removeItem('token');localStorage.removeItem('user');dispatch({type:'role/changeRole',payload:{role:[],loggedIn:false,isAdmin:false}});});
     }, [dispatch]);
 
-    const locations = [
-      { position: [21.2514, 81.6296], popupText: 'Raipur Relief Centre' },
-      { position: [20.2961, 85.8245], popupText: 'Bhubaneswar Emergency Centre' },
-      { position: [13.0827, 80.2707], popupText: 'Chennai Relief Centre' }
-    ];
   return (
     <>
     <Header />
     <Routes>
 
         <Route path="/" element={  <Home />  } />
-        <Route path="/map" element={<Map locations={locations} defaultZoom={5} />} />
+        <Route path="/map" element={<Map defaultZoom={5} />} />
         <Route path="/operations" element={loggedIn ? <OperationsDashboard/> : <Navigate to="/auth"/>} />
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/guidelines" element={<Guidelines />} />
+        <Route path="/faq" element={<FAQ />} />
         <Route path="/volunteers" element={loggedIn ? <OperationsDashboard/> : <Navigate to="/auth"/>} />
-        <Route path="/resources" element={<OperationsDashboard/>} />
-        <Route path="/announcements" element={<OperationsDashboard/>} />
-        <Route path="/donate" element={<OperationsDashboard/>} />
+        <Route path="/resources" element={loggedIn ? <OperationsDashboard/> : <Navigate to="/auth"/>} />
+        <Route path="/announcements" element={loggedIn ? <OperationsDashboard/> : <Navigate to="/auth"/>} />
+        <Route path="/donate" element={loggedIn ? <OperationsDashboard/> : <Navigate to="/auth"/>} />
         <Route path="/auth" element={<Auth/>} >
             <Route path='login' element={<h1>login</h1>} />
             <Route path='register' element={<h1>Register</h1>} />
@@ -64,7 +63,7 @@ export const AllRoutes = () => {
         <Route path='/incidents' element={<Incidents/>} />
         <Route path='/medicals' element={ <Medicals/>} />
         <Route path='/medical/:id' element={ <MedicalHome/>} />
-        <Route path='*' element={<h1>404 ! Page Not Found</h1>} />
+        <Route path='*' element={<div className="app-error"><div className="app-error-card"><div style={{fontSize:'42px'}}>🗺️</div><h1>Page not found</h1><p>The page you are looking for doesn't exist or has moved.</p><button onClick={() => window.location.assign('/')}>Go to home</button></div></div>} />
     </Routes>
     <Footer />
       </>

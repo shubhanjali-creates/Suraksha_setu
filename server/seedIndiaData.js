@@ -24,6 +24,7 @@ const Message = require('./models/Message');
 const VolunteerTask = require('./models/VolunteerTask');
 const ResourceAllocation = require('./models/ResourceAllocation');
 const Notification = require('./models/Notification');
+const AuditLog = require('./models/AuditLog');
 
 const MONGO_URI = process.env.MONGO_URI;
 
@@ -37,7 +38,7 @@ async function seed() {
 
   const models = [
     Message, Announcement, Donation, Resource, HelpCenter,
-    EmergencyContact, Incident, Location, Community, User, VolunteerTask, ResourceAllocation, Notification
+    EmergencyContact, Incident, Location, Community, User, VolunteerTask, ResourceAllocation, Notification, AuditLog
   ];
 
   for (const model of models) {
