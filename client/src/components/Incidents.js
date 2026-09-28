@@ -140,11 +140,8 @@ export const Incidents = () => {
     const affected =
       document.getElementById('Affected').value;
 
-    const incidentStatus =
-      document.getElementById('IncidentStatus').value;
-
-    const urgency =
-      document.getElementById('Urgency').value;
+    const priority =
+      document.getElementById('Priority').value;
 
     const incidentLocationText =
       document.getElementById('IncidentLocation').value;
@@ -155,8 +152,7 @@ export const Incidents = () => {
       incidentLocation,
       incidentDescription,
       affected,
-      incidentStatus,
-      urgency
+      priority
     );
 
     // =========================
@@ -197,8 +193,7 @@ export const Incidents = () => {
       Description: incidentDescription,
       ReportedBy: user.UserID,
       DateReported: incidentDate,
-      Urgency: urgency,
-      Status: incidentStatus,
+      Priority: priority,
 
       // Additional India-based location information
       State: selectedState,
@@ -208,7 +203,7 @@ export const Incidents = () => {
       IncidentLocation: incidentLocationText,
 
       // Other information
-      Affected: affected,
+      ApproximateaffectedCount: Number(affected) || 0,
       Latitude: latitude,
       Longitude: longitude
     };
@@ -749,50 +744,25 @@ export const Incidents = () => {
         </div>
 
 
-        {/* Status */}
+        {/* Priority */}
 
         <div className="form-item">
 
-          <label htmlFor="IncidentStatus">
-            Incident Status
+          <label htmlFor="Priority">
+            Priority
           </label>
 
           <select
-            id="IncidentStatus"
-            name="IncidentStatus"
+            id="Priority"
+            name="Priority"
             style={{
               marginLeft: "51px"
             }}
           >
 
-            <option value="Running">
-              Running
+            <option value="Critical">
+              Critical
             </option>
-
-            <option value="Expired">
-              Expired
-            </option>
-
-          </select>
-
-        </div>
-
-
-        {/* Urgency */}
-
-        <div className="form-item">
-
-          <label htmlFor="Urgency">
-            Urgency
-          </label>
-
-          <select
-            id="Urgency"
-            name="Urgency"
-            style={{
-              marginLeft: "107px"
-            }}
-          >
 
             <option value="High">
               High
@@ -888,7 +858,7 @@ export const Incidents = () => {
             </th>
 
             <th>
-              Urgency
+              Priority
             </th>
 
           </tr>
@@ -932,7 +902,7 @@ export const Incidents = () => {
                 </td>
 
                 <td>
-                  {incident.Urgency}
+                  {incident.Priority || incident.Urgency}
                 </td>
 
               </tr>

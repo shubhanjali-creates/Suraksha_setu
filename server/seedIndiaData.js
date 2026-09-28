@@ -66,6 +66,11 @@ async function seed() {
       UserID: 104, Name: 'Ananya Sharma', Email: 'ananya.sharma@example.in',
       Phone: '9987654321', Password: password, Address: 'Raipur, Chhattisgarh, India',
       UserType: ['admin', 'volunteer'], Available: true, Community: [1]
+    },
+    {
+      UserID: 105, Name: 'Karan Singh', Email: 'karan.responder@example.in',
+      Phone: '9876501234', Password: password, Address: 'New Delhi, India',
+      UserType: ['responder'], Available: true, Community: [5]
     }
   ]);
 
@@ -94,39 +99,65 @@ async function seed() {
 
   await Incident.insertMany([
     {
-      IncidentID: 1, Volunteers: [101, 102], AffectedIndividual: [1, 2, 3],
+      IncidentID: 1, Volunteers: [101, 102], Responders: [105], AffectedIndividual: [1, 2, 3],
       ApproximateaffectedCount: 180, LocationID: 1, IncidentType: 'Flood',
       Description: 'Heavy monsoon rainfall has caused waterlogging in low-lying areas of Raipur. Community volunteers are assisting with evacuation and supplies.',
       CommunityID: 1, ReportedBy: 101, DateReported: new Date('2026-07-18T14:30:00+05:30'),
-      Urgency: 'High', Status: 'Running'
+      Priority: 'High', Urgency: 'High', Status: 'Responding', lastUpdated: new Date('2026-07-19T09:00:00+05:30'),
+      Timeline: [
+        { event: 'Reported', at: new Date('2026-07-18T14:30:00+05:30'), by: 101, note: 'Incident submitted to operations centre' },
+        { event: 'Verified', at: new Date('2026-07-18T15:00:00+05:30'), by: 104, note: 'Field report confirmed by district desk' },
+        { event: 'Team assigned', at: new Date('2026-07-18T16:00:00+05:30'), by: 104, note: 'Volunteers 101, 102 and responder 105 assigned' },
+        { event: 'Response started', at: new Date('2026-07-19T09:00:00+05:30'), by: 105, note: 'Relief distribution underway at Telibandha' }
+      ],
+      ResponseNotes: [{ text: 'Water levels stable; evacuation support continuing.', by: 105, at: new Date('2026-07-19T10:30:00+05:30') }]
     },
     {
-      IncidentID: 2, Volunteers: [102], AffectedIndividual: [4, 5],
+      IncidentID: 2, Volunteers: [102], Responders: [105], AffectedIndividual: [4, 5],
       ApproximateaffectedCount: 95, LocationID: 2, IncidentType: 'Cyclone',
       Description: 'Cyclonic weather has disrupted coastal services around Bhubaneswar. Relief teams are supporting temporary shelters.',
       CommunityID: 2, ReportedBy: 102, DateReported: new Date('2026-08-02T09:15:00+05:30'),
-      Urgency: 'Medium', Status: 'Running'
+      Priority: 'Medium', Urgency: 'Medium', Status: 'Verified', lastUpdated: new Date('2026-08-02T11:00:00+05:30'),
+      Timeline: [
+        { event: 'Reported', at: new Date('2026-08-02T09:15:00+05:30'), by: 102, note: 'Incident submitted to operations centre' },
+        { event: 'Verified', at: new Date('2026-08-02T11:00:00+05:30'), by: 105, note: 'Coastal advisory validated' },
+        { event: 'Team assigned', at: new Date('2026-08-02T11:15:00+05:30'), by: 105, note: 'Volunteer 102 assigned' }
+      ]
     },
     {
-      IncidentID: 3, Volunteers: [103], AffectedIndividual: [6],
+      IncidentID: 3, Volunteers: [], Responders: [], AffectedIndividual: [6],
       ApproximateaffectedCount: 70, LocationID: 3, IncidentType: 'Flood',
       Description: 'Localized flooding has affected several streets in Chennai. Volunteers are distributing drinking water and essential supplies.',
       CommunityID: 3, ReportedBy: 103, DateReported: new Date('2026-08-11T11:00:00+05:30'),
-      Urgency: 'Medium', Status: 'Running'
+      Priority: 'Medium', Urgency: 'Medium', Status: 'Reported', lastUpdated: new Date('2026-08-11T11:00:00+05:30'),
+      Timeline: [{ event: 'Reported', at: new Date('2026-08-11T11:00:00+05:30'), by: 103, note: 'Incident submitted to operations centre' }]
     },
     {
-      IncidentID: 4, Volunteers: [101], AffectedIndividual: [7, 8],
+      IncidentID: 4, Volunteers: [101], Responders: [105], AffectedIndividual: [7, 8],
       ApproximateaffectedCount: 120, LocationID: 4, IncidentType: 'Flood',
       Description: 'River levels have risen around Guwahati. Community shelters and volunteer transport are active.',
       CommunityID: 4, ReportedBy: 101, DateReported: new Date('2026-08-18T16:20:00+05:30'),
-      Urgency: 'High', Status: 'Running'
+      Priority: 'Critical', Urgency: 'High', Status: 'Responding', lastUpdated: new Date('2026-08-19T08:00:00+05:30'),
+      Timeline: [
+        { event: 'Reported', at: new Date('2026-08-18T16:20:00+05:30'), by: 101, note: 'Incident submitted to operations centre' },
+        { event: 'Verified', at: new Date('2026-08-18T17:00:00+05:30'), by: 104, note: 'River gauge alert confirmed' },
+        { event: 'Team assigned', at: new Date('2026-08-18T17:30:00+05:30'), by: 104, note: 'Volunteer 101 and responder 105 assigned' },
+        { event: 'Response started', at: new Date('2026-08-19T08:00:00+05:30'), by: 105, note: 'Shelter transport active' }
+      ]
     },
     {
-      IncidentID: 5, Volunteers: [104], AffectedIndividual: [9],
+      IncidentID: 5, Volunteers: [104], Responders: [], AffectedIndividual: [9],
       ApproximateaffectedCount: 45, LocationID: 5, IncidentType: 'Fire',
       Description: 'A residential fire incident was reported in New Delhi. Local emergency services and volunteers assisted affected residents.',
       CommunityID: 5, ReportedBy: 104, DateReported: new Date('2026-08-25T18:10:00+05:30'),
-      Urgency: 'High', Status: 'Running'
+      Priority: 'High', Urgency: 'High', Status: 'Resolved', lastUpdated: new Date('2026-08-26T12:00:00+05:30'),
+      Timeline: [
+        { event: 'Reported', at: new Date('2026-08-25T18:10:00+05:30'), by: 104, note: 'Incident submitted to operations centre' },
+        { event: 'Verified', at: new Date('2026-08-25T18:30:00+05:30'), by: 105, note: 'Fire services on scene' },
+        { event: 'Team assigned', at: new Date('2026-08-25T19:00:00+05:30'), by: 105, note: 'Volunteer 104 assigned for resident support' },
+        { event: 'Response started', at: new Date('2026-08-25T19:15:00+05:30'), by: 105, note: 'Temporary shelter arranged' },
+        { event: 'Resolved', at: new Date('2026-08-26T12:00:00+05:30'), by: 105, note: 'All residents accounted for; site secured' }
+      ]
     }
   ]);
 
@@ -191,7 +222,9 @@ async function seed() {
   ]);
   await Notification.insertMany([
     {NotificationID:1,UserID:101,Title:'Volunteer task assigned',Message:'Distribute drinking water at Telibandha relief centre.',Type:'task'},
-    {NotificationID:2,UserID:104,Title:'Incident requires attention',Message:'Raipur flood incident #1 is marked High urgency.',Type:'incident'}
+    {NotificationID:2,UserID:104,Title:'Incident requires attention',Message:'Raipur flood incident #1 is marked High urgency.',Type:'incident'},
+    {NotificationID:3,UserID:101,Title:'Incident assignment',Message:'You have been assigned to Flood incident #1 (High priority).',Type:'incident'},
+    {NotificationID:4,UserID:105,Title:'Incident assignment',Message:'You have been assigned to Flood incident #4 (Critical priority).',Type:'incident'}
   ]);
 
   console.log('India-based demo data inserted successfully.');

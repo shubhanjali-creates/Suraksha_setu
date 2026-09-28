@@ -10,6 +10,7 @@ const Announcement = require('../models/Announcement');
 const Message = require('../models/Message');
 const Notification = require('../models/Notification');
 const Donation = require('../models/Donation');
+const { enrichIncidents, initialTimeline, urgencyFromPriority } = require('../utils/incidentHelpers');
 
 async function nextId(Model, field) {
   const last = await Model.findOne().sort({ [field]: -1 }).select(field).lean();
@@ -18,11 +19,12 @@ async function nextId(Model, field) {
 
 exports.dashboard = async (req,res) => {
   try {
-    const [incidents, volunteers, communities, resources, centers, announcements] = await Promise.all([
+    const [incidentsRaw, volunteers, communities, resources, centers, announcements] = await Promise.all([
       Incident.find().sort({DateReported:-1}).limit(100).lean(),
-      User.countDocuments({UserType:'volunteer'}), Community.countDocuments(), Resource.find().lean(), HelpCenter.find().lean(), Announcement.find().sort({CreationDate:-1}).limit(10).lean()
+      User.countDocuments({ UserType: { $in: ['volunteer'] } }), Community.countDocuments(), Resource.find().lean(), HelpCenter.find().lean(), Announcement.find().sort({CreationDate:-1}).limit(10).lean()
     ]);
-    const active = incidents.filter(i => !['Resolved','Expired'].includes(i.Status)).length;
+    const incidents = await enrichIncidents(incidentsRaw);
+    const active = incidents.filter(i => !['Resolved','Expired','Rejected'].includes(i.Status)).length;
     const affected = incidents.reduce((n,i)=>n+(i.ApproximateaffectedCount||0),0);
     const available = resources.reduce((n,r)=>n+(r.Quantity||0),0);
     const communityRows = await Community.find().sort({Name:1}).lean();
@@ -67,10 +69,11 @@ exports.postAnnouncement = async(req,res)=>{try{const {Content,Urgency='medium'}
 exports.notifications = async(req,res)=>{try{const list=await Notification.find({UserID:req.user.UserID}).sort({CreatedAt:-1}).limit(30).lean(); res.json({notifications:list});}catch(e){res.status(500).json({error:e.message});}};
 exports.readNotification = async(req,res)=>{try{const n=await Notification.findOneAndUpdate({NotificationID:Number(req.params.id),UserID:req.user.UserID},{Read:true},{new:true}); if(!n)return res.status(404).json({error:'Notification not found.'}); res.json({notification:n});}catch(e){res.status(500).json({error:e.message});}};
 
-exports.sos = async(req,res)=>{try{const {Latitude,Longitude,Address,Description='Immediate assistance requested'}=req.body; if(!Number.isFinite(Number(Latitude))||!Number.isFinite(Number(Longitude)))return res.status(400).json({error:'Location is required for SOS.'}); const LocationID=await nextId(Location,'LocationID'); const IncidentID=await nextId(Incident,'IncidentID'); await Location.create({LocationID,IncidentID:[IncidentID],Latitude:Number(Latitude),Longitude:Number(Longitude),Address:Address||'Emergency location'}); const incident=await Incident.create({IncidentID,LocationID,IncidentType:'Medical Emergency',Description,ReportedBy:req.user.UserID,DateReported:new Date(),Urgency:'High',Status:'Reported',Latitude:Number(Latitude),Longitude:Number(Longitude),IncidentLocation:Address}); res.status(201).json({incident});}catch(e){res.status(500).json({error:e.message});}};
+exports.sos = async(req,res)=>{try{const {Latitude,Longitude,Address,Description='Immediate assistance requested'}=req.body; if(!Number.isFinite(Number(Latitude))||!Number.isFinite(Number(Longitude)))return res.status(400).json({error:'Location is required for SOS.'}); const LocationID=await nextId(Location,'LocationID'); const IncidentID=await nextId(Incident,'IncidentID'); await Location.create({LocationID,IncidentID:[IncidentID],Latitude:Number(Latitude),Longitude:Number(Longitude),Address:Address||'Emergency location'}); const now=new Date(); const incident=await Incident.create({IncidentID,LocationID,IncidentType:'Medical Emergency',Description,ReportedBy:req.user.UserID,DateReported:now,Priority:'Critical',Urgency:'High',Status:'Reported',Latitude:Number(Latitude),Longitude:Number(Longitude),IncidentLocation:Address,Timeline:initialTimeline(req.user.UserID),lastUpdated:now}); res.status(201).json({incident});}catch(e){res.status(500).json({error:e.message});}};
 
 
 exports.donate = async(req,res)=>{try{const amount=Number(req.body.Amount),resourceId=Number(req.body.ResourceID);if(!Number.isFinite(amount)||amount<=0)return res.status(400).json({error:'Donation amount must be positive.'});const donation=await Donation.create({DonationID:await nextId(Donation,'DonationID'),Amount:amount,DonatedBy:req.user.UserID,ResourceID:resourceId||1});res.status(201).json({donation});}catch(e){res.status(500).json({error:e.message});}};
 exports.donations = async(req,res)=>{try{const rows=await Donation.find().sort({DateDonated:-1}).limit(100).lean();const total=rows.reduce((n,x)=>n+x.Amount,0);res.json({donations:rows,total});}catch(e){res.status(500).json({error:e.message});}};
 
 exports.adminSummary = async(req,res)=>{try{const [users,incidents,resources,tasks]=await Promise.all([User.find().select('-Password').lean(),Incident.find().lean(),Resource.find().lean(),VolunteerTask.find().lean()]); res.json({users,incidents,resources,tasks});}catch(e){res.status(500).json({error:e.message});}};
+exports.teamUsers = async(req,res)=>{try{const users=await User.find({UserType:{$in:['volunteer','responder','admin']}}).select('UserID Name Email UserType Available').sort({Name:1}).lean(); res.json({users});}catch(e){res.status(500).json({error:e.message});}};

@@ -19,6 +19,7 @@ router.post('/notifications/:id/read',auth,op.readNotification);
 router.post('/sos',auth,op.sos);
 router.post('/donate',auth,op.donate);
 router.get('/admin',auth,role('admin'),op.adminSummary);
+router.get('/team-users',auth,role('admin','responder'),op.teamUsers);
 router.post('/communities/:id/join',auth,op.joinCommunity);
 router.post('/communities/:id/leave',auth,op.leaveCommunity);
 router.post('/communities/:id/messages',auth,op.postMessage);

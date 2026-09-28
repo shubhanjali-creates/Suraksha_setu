@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Navigate } from 'react-router-dom';
 import '../assets/CSS/AdminDashboard.css';
+import '../assets/CSS/OperationsDashboard.css';
+import IncidentWorkflow from '../components/IncidentWorkflow';
 
 const api = async (path, options = {}) => {
   const token = localStorage.getItem('token');
@@ -22,6 +24,7 @@ export default function AdminDashboard() {
   const [announcement, setAnnouncement] = useState({ Content: '', Urgency: 'medium', CommunityID: '' });
   const [task, setTask] = useState({ Description: '', AssignedTo: '', IncidentID: '' });
   const [allocation, setAllocation] = useState({ ResourceID: '', IncidentID: '', Quantity: '' });
+  const [expandedId, setExpandedId] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -36,9 +39,16 @@ export default function AdminDashboard() {
   if (!loggedIn) return <Navigate to="/auth/login" replace />;
   if (!isAdmin) return <div className="admin-page"><div className="admin-card"><h2>Admin access required</h2><p>Your account does not have administrator permissions.</p></div></div>;
 
-  const updateIncident = async (id, Status) => {
-    try { await api(`/incident/${id}`, { method: 'PUT', body: JSON.stringify({ Status }) }); await load(); }
-    catch (e) { setError(e.message); }
+  const incidentAction = async (incident, action, payload = {}) => {
+    try {
+      const id = incident.IncidentID;
+      if (action === 'verify') await api(`/incident/${id}/verify`, { method: 'POST', body: JSON.stringify(payload) });
+      else if (action === 'reject') await api(`/incident/${id}/reject`, { method: 'POST', body: JSON.stringify(payload) });
+      else if (action === 'assign') await api(`/incident/${id}/assign`, { method: 'POST', body: JSON.stringify(payload) });
+      else if (action === 'status') await api(`/incident/${id}/status`, { method: 'PATCH', body: JSON.stringify(payload) });
+      else if (action === 'note') await api(`/incident/${id}/notes`, { method: 'POST', body: JSON.stringify(payload) });
+      await load();
+    } catch (e) { setError(e.message); }
   };
 
   const publish = async e => {
@@ -79,7 +89,7 @@ export default function AdminDashboard() {
           <div className="admin-stats">
             {[["Active Incidents",stats.activeIncidents||0],["People Affected",stats.peopleAffected||0],["Volunteers",stats.volunteers||0],["Communities",stats.communities||0],["Resource Units",stats.resourceUnits||0],["Help Centres",stats.centers||0]].map(([label,value])=><div className="admin-stat" key={label}><span>{label}</span><strong>{value}</strong></div>)}
           </div>
-          <div className="admin-card"><h2>Incident Management</h2><div className="admin-table-wrap"><table><thead><tr><th>ID</th><th>Type</th><th>Location</th><th>Urgency</th><th>Status</th><th>Update</th></tr></thead><tbody>{(dashboard?.incidents||[]).map(i=><tr key={i.IncidentID}><td>#{i.IncidentID}</td><td>{i.IncidentType}</td><td>{i.IncidentLocation || `Location ${i.LocationID}`}</td><td>{i.Urgency}</td><td>{i.Status}</td><td>{!['Resolved','Expired'].includes(i.Status)&&<select value={i.Status} onChange={e=>updateIncident(i.IncidentID,e.target.value)}><option>Reported</option><option>Verified</option><option>Responding</option><option>Resolved</option></select>}</td></tr>)}</tbody></table></div></div>
+          <div className="admin-card"><h2>Incident Management</h2><p>Central workflow: Reported → Verified → Team assigned → Response started → Resolved</p><div className="incident-list">{(dashboard?.incidents||[]).map(i=><div className="incident-row" key={i.IncidentID}><button type="button" className="incident-summary" onClick={()=>setExpandedId(expandedId===i.IncidentID?null:i.IncidentID)}><span>#{i.IncidentID} · {i.IncidentType}</span><span className={`priority-badge priority-${(i.Priority||'medium').toLowerCase()}`}>{i.Priority||i.Urgency}</span><span>{i.Status}</span><span className="muted">{i.IncidentLocation || `Location ${i.LocationID}`}</span></button>{expandedId===i.IncidentID&&<IncidentWorkflow incident={i} canManage users={summary?.users||[]} onAction={(action,payload)=>incidentAction(i,action,payload)}/>}</div>)}</div></div>
         </section>}
 
         {active === 'announcements' && <section className="admin-card"><h2>Raise an Announcement</h2><form className="admin-form" onSubmit={publish}><label>Message<textarea value={announcement.Content} onChange={e=>setAnnouncement({...announcement,Content:e.target.value})} placeholder="Write an official disaster-response announcement..." required /></label><label>Priority<select value={announcement.Urgency} onChange={e=>setAnnouncement({...announcement,Urgency:e.target.value})}><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label><label>Community ID (optional)<input type="number" value={announcement.CommunityID} onChange={e=>setAnnouncement({...announcement,CommunityID:e.target.value})} placeholder="Leave empty for all communities" /></label><button>📢 Publish Announcement</button></form><h3>Recent announcements</h3>{(dashboard?.announcements||[]).map(a=><div className="admin-notice" key={a.AnnouncementID}><b>{a.Urgency.toUpperCase()}</b><p>{a.Content}</p></div>)}</section>}
