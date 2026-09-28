@@ -14,6 +14,14 @@ export const Incidents = () => {
   const [locations, setLocations] = useState(null);
 
   // =========================
+  // SOS STATE
+  // =========================
+
+  const [sosLoading, setSosLoading] = useState(false);
+  const [sosIncident, setSosIncident] = useState(null);
+  const [sosError, setSosError] = useState('');
+
+  // =========================
   // INDIA LOCATION DATA
   // =========================
 
@@ -85,6 +93,98 @@ export const Incidents = () => {
     }
 
     console.log('Location form opened');
+  };
+
+  // =========================
+  // SEND SOS
+  // =========================
+
+  const sendSOS = () => {
+    setSosError('');
+    setSosLoading(true);
+
+    if (!navigator.geolocation) {
+      setSosError('GPS is not supported by your browser.');
+      setSosLoading(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+
+        const token = localStorage.getItem('token');
+
+        if (!token) {
+          setSosError('Please login before using SOS.');
+          setSosLoading(false);
+          return;
+        }
+
+        try {
+          const response = await fetch('/incident/sos', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              Latitude: latitude,
+              Longitude: longitude
+            })
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || 'Failed to send SOS.');
+          }
+
+          console.log('SOS response:', data);
+
+          // Store both incident and nearest help center
+          setSosIncident({
+            ...data.incident,
+            nearestCenter: data.nearestCenter
+          });
+
+          alert(
+            `SOS sent successfully!\n\nSOS ID: ${data.SOSID}\nIncident ID: ${data.incident.IncidentID}`
+          );
+
+        } catch (error) {
+          console.error('SOS error:', error);
+          setSosError(error.message || 'Failed to send SOS.');
+        } finally {
+          setSosLoading(false);
+        }
+      },
+
+      (error) => {
+        console.error('GPS error:', error);
+
+        let message = 'Unable to get your location.';
+
+        if (error.code === 1) {
+          message =
+            'Location permission was denied. Please allow location access and try again.';
+        } else if (error.code === 2) {
+          message = 'Your location could not be determined.';
+        } else if (error.code === 3) {
+          message = 'Location request timed out. Please try again.';
+        }
+
+        setSosError(message);
+        setSosLoading(false);
+      },
+
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0
+      }
+    );
   };
 
   const iconClick = () => {
@@ -219,7 +319,12 @@ export const Incidents = () => {
 
           headers: {
             'Content-Type': 'application/json',
-            ...(localStorage.getItem('token') ? { Authorization: `Bearer ${localStorage.getItem('token')}` } : {})
+            ...(localStorage.getItem('token')
+              ? {
+                  Authorization:
+                    `Bearer ${localStorage.getItem('token')}`
+                }
+              : {})
           },
 
           body: JSON.stringify(incident)
@@ -271,8 +376,17 @@ export const Incidents = () => {
 
         const Maplocations = data.MapLocation || [];
 
-        if (Number.isFinite(Number(latitude)) && Number.isFinite(Number(longitude))) {
-          Maplocations.push({ position: [Number(latitude), Number(longitude)], popupText: "Selected location" });
+        if (
+          Number.isFinite(Number(latitude)) &&
+          Number.isFinite(Number(longitude))
+        ) {
+          Maplocations.push({
+            position: [
+              Number(latitude),
+              Number(longitude)
+            ],
+            popupText: "Selected location"
+          });
         }
 
         console.log(Maplocations);
@@ -298,6 +412,92 @@ export const Incidents = () => {
   return (
 
     <div className='inc-container'>
+
+      {/* =========================
+          SOS SECTION
+      ========================== */}
+
+      <div className="sos-section">
+
+        <button
+          type="button"
+          className="sos-button"
+          onClick={sendSOS}
+          disabled={sosLoading}
+        >
+          {
+            sosLoading
+              ? "Sending SOS..."
+              : "🚨 SEND SOS"
+          }
+        </button>
+
+        {sosError && (
+          <p className="sos-error">
+            {sosError}
+          </p>
+        )}
+
+        {sosIncident && (
+          <div className="sos-success">
+
+            <h3>
+              SOS Sent Successfully
+            </h3>
+
+            <p>
+              <strong>SOS ID:</strong>{" "}
+              {sosIncident.SOSID}
+            </p>
+
+            <p>
+              <strong>Incident ID:</strong>{" "}
+              {sosIncident.IncidentID}
+            </p>
+
+            <p>
+              <strong>Status:</strong>{" "}
+              {sosIncident.Status}
+            </p>
+
+            <p>
+              <strong>Coordinates:</strong>{" "}
+              {sosIncident.Latitude},{" "}
+              {sosIncident.Longitude}
+            </p>
+
+            <p>
+              <strong>Location:</strong>{" "}
+              {
+                sosIncident.IncidentLocation ||
+                "Location captured from GPS"
+              }
+            </p>
+
+            {/* =========================
+                NEAREST HELP CENTER
+            ========================== */}
+
+            <p>
+              <strong>Nearest Help Center:</strong>{" "}
+              {
+                sosIncident.nearestCenter?.Name ||
+                "Finding nearest center..."
+              }
+            </p>
+
+            {sosIncident.nearestCenter && (
+              <p>
+                <strong>Contact:</strong>{" "}
+                {sosIncident.nearestCenter.Phone}
+              </p>
+            )}
+
+          </div>
+        )}
+
+      </div>
+
 
       {/* =========================
           LOCATION SECTION
@@ -385,7 +585,7 @@ export const Incidents = () => {
             </label>
 
             <input
-              type="number"
+              type='number'
               id="longitude"
               name="longitude"
               value={longitude}

@@ -19,6 +19,10 @@ const responseNoteSchema = new mongoose.Schema({
 
 const incidentSchema = new mongoose.Schema({
   IncidentID: { type: Number, required: true, unique: true },
+
+  IsSOS: { type: Boolean, default: false },
+
+  SOSID: { type: String, default: '' },
   Volunteers: { type: [Number], default: [] },
   Responders: { type: [Number], default: [] },
   AffectedIndividual: { type: [Number], default: [] },
