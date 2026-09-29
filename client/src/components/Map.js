@@ -1,15 +1,260 @@
-import React,{useEffect,useMemo,useState} from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import '../assets/CSS/Map.css'; import 'leaflet/dist/leaflet.css'; import L from 'leaflet';
-import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'; import iconUrl from 'leaflet/dist/images/marker-icon.png'; import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
-delete L.Icon.Default.prototype._getIconUrl; L.Icon.Default.mergeOptions({iconRetinaUrl,iconUrl,shadowUrl});
-const INDIA_CENTER=[22.5937,78.9629]; const INDIA_BOUNDS=[[6,68],[37.5,97.5]];
-const icon=(kind)=>L.divIcon({className:`map-marker map-marker-${kind}`,html:'<span></span>',iconSize:[22,22],iconAnchor:[11,11]});
-const Map=({locations:initialLocations=[],longitude,latitude,defaultZoom=5,useLiveData=true})=>{
- const [locations,setLocations]=useState(initialLocations); const [kind,setKind]=useState('all'); const [status,setStatus]=useState('all'); const [state,setState]=useState('all'); const [loading,setLoading]=useState(true);
- const hasValidCoordinates=Number.isFinite(Number(latitude))&&Number.isFinite(Number(longitude)); const defaultPosition=hasValidCoordinates?[Number(latitude),Number(longitude)]:INDIA_CENTER;
- useEffect(()=>{if(!useLiveData){setLoading(false);return;} let cancelled=false; const load=async()=>{try{setLoading(true); const r=await fetch('/api/locations'); const d=await r.json(); if(!r.ok)throw new Error(d.error||'Unable to load map data'); if(!cancelled)setLocations(d.locations||[]);}catch{if(!cancelled)setLocations(initialLocations||[]);}finally{if(!cancelled)setLoading(false);}}; load(); return()=>{cancelled=true;};},[useLiveData]);
- const states=useMemo(()=>Array.from(new Set(locations.filter(x=>x.type==='incident'&&x.state).map(x=>x.state))).sort(),[locations]);
- const filtered=locations.filter(x=>(kind==='all'||x.type===kind)&&(status==='all'||String(x.status||'').toLowerCase()===status)&&(state==='all'||x.state===state));
- return <div className="map-shell"><div className="map-toolbar"><label>Show <select value={kind} onChange={e=>setKind(e.target.value)}><option value="all">Everything</option><option value="incident">Incidents</option><option value="hospital">Hospitals</option><option value="shelter">Shelters</option><option value="relief-centre">Relief Centres</option></select></label><label>Status <select value={status} onChange={e=>setStatus(e.target.value)}><option value="all">All</option><option value="reported">Reported</option><option value="verified">Verified</option><option value="responding">Responding</option><option value="resolved">Resolved</option></select></label><label>State <select value={state} onChange={e=>setState(e.target.value)}><option value="all">All India</option>{states.map(s=><option key={s}>{s}</option>)}</select></label>{loading&&<span>Loading live map data…</span>}</div><div className="map-container"><MapContainer center={defaultPosition} zoom={defaultZoom||5} minZoom={4} maxZoom={13} maxBounds={INDIA_BOUNDS} maxBoundsViscosity={1.0} style={{height:'100%',width:'100%'}}><TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>{filtered.map((location,idx)=><Marker key={`${location.type}-${location.incidentId||location.centerId||idx}`} position={location.position} icon={icon(location.type)}><Popup><strong>{location.name||location.disasterType||'Disaster location'}</strong><br/>{location.popupText}<br/>{location.address&&<small>{location.address}</small>}{location.incidentId&&<><br/>Incident #{location.incidentId}</>}</Popup></Marker>)}</MapContainer></div></div>;
-}; export {Map};
+
+import '../assets/CSS/Map.css';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
+import iconUrl from 'leaflet/dist/images/marker-icon.png';
+import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl,
+  iconUrl,
+  shadowUrl
+});
+
+const INDIA_CENTER = [22.5937, 78.9629];
+const INDIA_BOUNDS = [[6, 68], [37.5, 97.5]];
+
+const icon = (kind) =>
+  L.divIcon({
+    className: `map-marker map-marker-${kind}`,
+    html: '<span></span>',
+    iconSize: [22, 22],
+    iconAnchor: [11, 11]
+  });
+
+const Map = ({
+  locations: initialLocations = [],
+  longitude,
+  latitude,
+  defaultZoom = 5,
+  useLiveData = true
+}) => {
+  const [locations, setLocations] = useState(initialLocations);
+  const [kind, setKind] = useState('all');
+  const [status, setStatus] = useState('all');
+  const [state, setState] = useState('all');
+  const [loading, setLoading] = useState(true);
+
+  /*
+   * The Scan Your Area map should always open on India.
+   * We keep latitude/longitude props because they may be used
+   * elsewhere, but they should not control the initial map view.
+   */
+  const defaultPosition = INDIA_CENTER;
+
+  useEffect(() => {
+    if (!useLiveData) {
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        setLoading(true);
+
+        const r = await fetch('/api/locations');
+        const d = await r.json();
+
+        if (!r.ok) {
+          throw new Error(d.error || 'Unable to load map data');
+        }
+
+        if (!cancelled) {
+          setLocations(d.locations || []);
+        }
+      } catch {
+        if (!cancelled) {
+          setLocations(initialLocations || []);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [useLiveData]);
+
+  // Get all states available in the location data
+  const states = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          locations
+            .filter((x) => x.state)
+            .map((x) => x.state)
+        )
+      ).sort(),
+    [locations]
+  );
+
+  // Apply Show + Status + State filters
+  const filtered = locations.filter((x) => {
+    // -------------------------
+    // SHOW FILTER
+    // -------------------------
+    let typeMatch = true;
+
+    if (kind !== 'all') {
+      if (kind === 'incident') {
+        typeMatch = x.type === 'incident';
+      } else if (kind === 'hospital') {
+        typeMatch = x.type === 'hospital';
+      } else if (kind === 'shelter') {
+        typeMatch = x.type === 'sheltercenter';
+      } else if (kind === 'relief-centre') {
+        typeMatch =
+          x.type === 'reliefcenter' ||
+          x.type === 'relief-centre' ||
+          x.type === 'relief_center';
+      }
+    }
+
+    // -------------------------
+    // STATUS FILTER
+    // -------------------------
+    // Status applies only to incidents.
+    // Hospitals, shelters and relief centres
+    // do not have incident statuses.
+    const statusMatch =
+      status === 'all' ||
+      x.type !== 'incident' ||
+      String(x.status || '').toLowerCase() === status;
+
+    // -------------------------
+    // STATE FILTER
+    // -------------------------
+    const stateMatch =
+      state === 'all' ||
+      String(x.state || '').toLowerCase() === state.toLowerCase();
+
+    return typeMatch && statusMatch && stateMatch;
+  });
+
+  return (
+    <div className="map-shell">
+
+      <div className="map-toolbar">
+
+        <label>
+          Show
+          <select
+            value={kind}
+            onChange={(e) => setKind(e.target.value)}
+          >
+            <option value="all">Everything</option>
+            <option value="incident">Incidents</option>
+            <option value="hospital">Hospitals</option>
+            <option value="shelter">Shelters</option>
+            <option value="relief-centre">Relief Centres</option>
+          </select>
+        </label>
+
+        <label>
+          Status
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+          >
+            <option value="all">All</option>
+            <option value="reported">Reported</option>
+            <option value="verified">Verified</option>
+            <option value="responding">Responding</option>
+            <option value="resolved">Resolved</option>
+          </select>
+        </label>
+
+        <label>
+          State
+          <select
+            value={state}
+            onChange={(e) => setState(e.target.value)}
+          >
+            <option value="all">All India</option>
+
+            {states.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {loading && <span>Loading live map data…</span>}
+
+      </div>
+
+      <div className="map-container">
+
+        <MapContainer
+          center={defaultPosition}
+          zoom={5}
+          minZoom={4}
+          maxZoom={13}
+          maxBounds={INDIA_BOUNDS}
+          maxBoundsViscosity={1.0}
+          style={{ height: '100%', width: '100%' }}
+        >
+
+          <TileLayer
+            attribution="&copy; OpenStreetMap contributors"
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+
+          {filtered.map((location, idx) => (
+            <Marker
+              key={`${location.type}-${location.incidentId || location.centerId || idx}`}
+              position={location.position}
+              icon={icon(location.type)}
+            >
+              <Popup>
+
+                <strong>
+                  {location.name ||
+                    location.disasterType ||
+                    'Disaster location'}
+                </strong>
+
+                <br />
+
+                {location.popupText}
+
+                <br />
+
+                {location.address && (
+                  <small>{location.address}</small>
+                )}
+
+                {location.incidentId && (
+                  <>
+                    <br />
+                    Incident #{location.incidentId}
+                  </>
+                )}
+
+              </Popup>
+            </Marker>
+          ))}
+
+        </MapContainer>
+
+      </div>
+
+    </div>
+  );
+};
+
+export { Map };
